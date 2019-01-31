@@ -2,7 +2,7 @@
 using MahApps.Metro.Controls.Dialogs;
 using MahApps.Metro.SimpleChildWindow;
 using OpenCvSharp;
-using OpenCvSharp.CPlusPlus;
+//using OpenCvSharp.CPlusPlus;
 using OpenCvSharp.Extensions;
 using OpenCVSharp_GUI.Views;
 using System;
@@ -23,6 +23,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+
+//https://github.com/shimat/opencvsharp
+//https://github.com/shimat/opencvsharp_samples
+//Use https://www.nuget.org/packages/OpenCvSharp3-AnyCPU/ 4.0.0.20181129 
 
 namespace OpenCVSharp_GUI
 {
@@ -48,8 +52,11 @@ namespace OpenCVSharp_GUI
         private int _cValue = 1;
         private int _intensityValue = 1;
         private int _intensityCount = 0;
-        private AdaptiveThresholdType _adptthresholdType;
-        private ThresholdType _thsType;
+        private AdaptiveThresholdTypes _adptthresholdType;
+        private ThresholdTypes _thsType;
+
+        private string _loaded_image = null;
+        private string _saved_image = null;
 
 
         #region Public Properties
@@ -66,6 +73,32 @@ namespace OpenCVSharp_GUI
                 OnPropertyChanged("OriginalImage");
             }
         }
+
+
+        public string Loaded_Image
+        {
+            get
+            {
+                return _loaded_image;
+            }
+            set
+            {
+                _loaded_image = value;
+            }
+        }
+
+        public string Saved_Image
+        {
+            get
+            {
+                return _saved_image;
+            }
+            set
+            {
+                _saved_image = value;
+            }
+        }
+
 
         public BitmapSource ConvertedImage
         {
@@ -230,7 +263,7 @@ namespace OpenCVSharp_GUI
             }
         }
 
-        public AdaptiveThresholdType AdptThresholdType
+        public AdaptiveThresholdTypes AdptThresholdType
         {
             get { return _adptthresholdType; }
             set
@@ -240,15 +273,15 @@ namespace OpenCVSharp_GUI
             }
         }
 
-        public IEnumerable<AdaptiveThresholdType> AdptThresholdTypes
+        public IEnumerable<AdaptiveThresholdTypes> AdptThresholdTypes
         {
             get
             {
-                return Enum.GetValues(typeof(AdaptiveThresholdType)).Cast<AdaptiveThresholdType>();
+                return Enum.GetValues(typeof(AdaptiveThresholdTypes)).Cast<AdaptiveThresholdTypes>();
             }
         }
 
-        public ThresholdType ThsType
+        public ThresholdTypes ThsType
         {
             get
             {
@@ -261,11 +294,11 @@ namespace OpenCVSharp_GUI
             }
         }
 
-        public IEnumerable<ThresholdType> ThsTypes
+        public IEnumerable<ThresholdTypes> ThsTypes
         {
             get
             {
-                return Enum.GetValues(typeof(ThresholdType)).Cast<ThresholdType>();
+                return Enum.GetValues(typeof(ThresholdTypes)).Cast<ThresholdTypes>();
             }
         }
         #endregion
@@ -313,16 +346,16 @@ namespace OpenCVSharp_GUI
 
         private void ExecuteTransformation(Mat image, String transformation)
         {
-            IplImage gray = new IplImage(Cv.GetSize(((IplImage)image)), BitDepth.U8, 1);
-            IplImage dest = new IplImage(Cv.GetSize(((IplImage)image)), BitDepth.U8, 1);
+            Mat gray = new Mat(image.Height, image.Width, MatType.CV_8UC1);
+            Mat dest = new Mat(image.Height, image.Width, MatType.CV_8UC1);
 
-            if (((IplImage)image).NChannels > 1)
+            if (image.Channels() > 1)
             {
-                ((IplImage)image).CvtColor(gray, ColorConversion.BgrToGray);
+                gray= image.CvtColor(ColorConversionCodes.BGR2GRAY).Clone();
             }
             else
             {
-                gray = ((IplImage)image).Clone();
+                gray = image.Clone();
             }
 
             switch (transformation)
@@ -354,8 +387,8 @@ namespace OpenCVSharp_GUI
                 case "Resize":
                     Filters.ScaleImage(gray, ref dest, ResizeValue);
                     ConvertedImage = dest.ToBitmap().ToBitmapSource();
-                    ImageWidth = _convertedImage.Width;
-                    ImageHeight = _convertedImage.Height;
+                    ImageWidth = Math.Ceiling( _convertedImage.Width);
+                    ImageHeight = Math.Ceiling(_convertedImage.Height);
                     break;
                 case "BitWiseInverter":
                     Filters.InvertImage(gray, ref dest);
@@ -372,12 +405,15 @@ namespace OpenCVSharp_GUI
                 default:
                     break;
             }
-            _convertedMat = new Mat(dest);
+
+            //Cv2.Circle(dest, new OpenCvSharp.Point(200, 200), 100, new Scalar(0,0,0), 10, LineTypes.Link8, 0);
+            _convertedMat = dest;
+                
         }
 
-        private void LoadImage(String Path)
+        private void LoadImage(String filePath)
         {
-            _originalMat = new Bitmap(Path).ToMat();
+            _originalMat = new Bitmap(filePath).ToMat();
             _convertedMat = _originalMat.Clone();
             OriginalImage = _originalMat.ToBitmapSource();
             ConvertedImage = _originalMat.ToBitmapSource();
@@ -385,6 +421,17 @@ namespace OpenCVSharp_GUI
             ImageHeight = _originalMat.Height;
             ResizeValue = 100;
         }
+
+        private void SaveImage(String filePath)
+        {
+            using (var fileStream = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
+            {
+                BitmapEncoder encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(ConvertedImage));
+                encoder.Save(fileStream);
+            }
+        }
+        
         #endregion
 
         #region Events
@@ -472,10 +519,10 @@ namespace OpenCVSharp_GUI
             switch (result)
             {
                 case System.Windows.Forms.DialogResult.OK:
-                    String selectedFile = dialogFile.FileName;
-                    if (!String.IsNullOrEmpty(selectedFile))
+                    Loaded_Image = dialogFile.FileName;
+                    if (!String.IsNullOrEmpty(Loaded_Image))
                     {
-                        LoadImage(selectedFile);
+                        LoadImage(Loaded_Image);
                     }
                     break;
                 case System.Windows.Forms.DialogResult.Cancel:
@@ -484,10 +531,19 @@ namespace OpenCVSharp_GUI
                     break;
             }
         }
-        #endregion
 
-        #region Window Events
-        private async void showToolTipWindow()
+        private void saveImage_Click(object sender, RoutedEventArgs e)
+        {
+            string use=System.IO.Path.GetFileNameWithoutExtension(Loaded_Image);
+            use += "_Elab.png";
+            Saved_Image = use = System.IO.Path.GetDirectoryName(Loaded_Image) + "\\" + use;
+            SaveImage(Saved_Image);
+        }
+
+            #endregion
+
+            #region Window Events
+            private async void showToolTipWindow()
         {
             await this.ShowChildWindowAsync(new ToolTipWindow() { IsModal = true, EnableDropShadow=true}, ChildWindowManager.OverlayFillBehavior.FullWindow);
         }

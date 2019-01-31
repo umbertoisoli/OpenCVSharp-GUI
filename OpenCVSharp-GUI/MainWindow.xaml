@@ -27,7 +27,8 @@
 
                 <Image Name="OriginalImg" Source="{Binding OriginalImage}" Grid.Row="0"></Image>
                 <Image Name="ConvertedImg" Source="{Binding ConvertedImage}" Grid.Row="1"></Image>
-                <Button Name="loadImage" Click="loadImage_Click"  Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center">Load Image</Button>
+                <Button Name="loadImage" Click="loadImage_Click"  Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5">Load Image</Button>
+                <Button x:Name="saveImage" Click="saveImage_Click"  Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="85,0,0,5" Content="Save Image"/>
             </Grid>
 
             <ListView Grid.Column="1">
@@ -358,6 +359,6 @@
 
         </Grid>
     </Grid>
-    
-    
+
+
 </Controls:MetroWindow>
