@@ -50,27 +50,41 @@ namespace OpenCVSharp_GUI
 
         public static void EdgeEnhancement(Mat gray, ref Mat enhancedImage)
         {
-            float[] data = { -1, -1, -1, -1, -1,  -1, 2, 2, 2, -1,
-                             -1,  2,  8,  2, -1,  -1, 2, 2, 2, -1, -1,-1,-1,-1,-1
-                    };
-            OpenCvSharp.InputArray datix = OpenCvSharp.InputArray.Create(data);
+            enhancedImage = gray.Clone();
+            Mat kernelx = new Mat(5, 5, MatType.CV_8SC1, new Scalar(0));
+            Mat dst = new Mat();
 
-            //CvMat kernel = new CvMat(5, 5, MatrixType.U8C1, data);
-            //Cv2.Normalize(kernel, kernel, 8, 0,NormTypes.L1);
-            //Cv2.Filter2D(gray, enhancedImage, kernel);
-
-
-            //Nuovo
-            float[] kernelValues = { -1, -1, -1, -1, -1,
+            sbyte[] kernelValues = { -1, -1, -1, -1, -1,
                                      -1,  2,  2,  2, -1,
-                                     -1,  2,  8,  2, -1,
+                                     -1,  2,  7,  2, -1,
                                      -1,  2,  2,  2, -1,
                                      -1, -1, -1, -1, -1  };
 
-            Mat kernel = new Mat(5, 5, MatType.CV_8UC1, kernelValues);
+            Mat kernel = new Mat(5, 5, MatType.CV_8SC1, kernelValues);
 
 
-            Cv2.EqualizeHist(gray, enhancedImage);
+            kernelx.Set<sbyte>(1, 1,  4);
+            kernelx.Set<sbyte>(0, 1,  -1);
+            kernelx.Set<sbyte>(2, 1,  -1);
+            kernelx.Set<sbyte>(1, 0,  -1);
+            kernelx.Set<sbyte>(1, 2,  -1);
+
+            //Cv2.Normalize(gray, enhancedImage, 0, 255, NormTypes.MinMax);
+
+            gray.ConvertTo(gray, MatType.CV_32FC1,1,-10); // or CV_32F works too
+            Cv2.Log(gray, enhancedImage);
+            enhancedImage.ConvertTo(enhancedImage, MatType.CV_8UC1,46,-50); // or CV_32F works too
+
+            //Cv2.Filter2D(gray, enhancedImage, MatType.CV_8UC1, kernelx);
+
+            return;
+
+            //Nuovo
+
+            
+
+
+            //Cv2.EqualizeHist(gray, enhancedImage);
             Point centro = new Point(-1, -1);
             Cv2.Filter2D(gray, enhancedImage,-1, kernel, centro,0,BorderTypes.Default);
         }
@@ -112,11 +126,57 @@ namespace OpenCVSharp_GUI
 
         public static void InvertImage(Mat gray, ref Mat inverted)
         {
-            Cv2.BitwiseNot(gray, inverted);
+            //Cv2.BitwiseNot(gray, inverted);
+
+
+            //Quantize
+            //https://github.com/shimat/opencvsharp/wiki/Accessing-Pixel
+
+            inverted = gray.Clone();
+
+            MatOfByte3 mat3 = new MatOfByte3(gray);
+            var indexer = mat3.GetIndexer();
+
+            MatOfByte3 mat4 = new MatOfByte3(inverted);
+            var indexer2 = mat4.GetIndexer();
+
+
+
+            for (int y = 0; y < gray.Height; y++)
+            {
+                for (int x = 0; x < gray.Width; x++)
+                {
+                    byte max_pixel = 0;
+                    byte min_pixel = 255;
+
+
+                    Vec3b color = indexer[y, x];
+                    byte uno = color.Item0;
+                    if (uno > max_pixel) max_pixel = uno;
+                    if (uno < min_pixel) min_pixel = uno;
+
+                    byte due = color.Item1;
+                    if (due > max_pixel) max_pixel = due;
+                    if (due < min_pixel) min_pixel = due;
+
+                    byte delta = (byte)(max_pixel - min_pixel);
+                    byte media = (byte)((max_pixel + min_pixel) >> 1);
+
+                    if (delta < 40 && delta >= 4)
+                    {
+                        Vec3b color1 = indexer2[y, x];
+                        color.Item0 = media;
+                        color.Item1 = media;
+                        indexer2[y, x]=color;
+                        Vec3b color2 = indexer2[y, x];
+                    }
+                }
+            }
         }
 
         public static int CountPixelByIntensity(Mat gray, int pixelValue)
         {
+            //https://github.com/shimat/opencvsharp/wiki/Accessing-Pixel
             MatOfByte3 mat3 = new MatOfByte3(gray);
             var indexer = mat3.GetIndexer();
 

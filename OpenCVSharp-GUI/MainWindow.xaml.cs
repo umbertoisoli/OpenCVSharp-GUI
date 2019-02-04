@@ -381,7 +381,8 @@ namespace OpenCVSharp_GUI
                     ConvertedImage = dest.ToBitmap().ToBitmapSource();
                     break;
                 case "Denoiser":
-                    Filters.Denoiser(gray, ref dest);
+                    //Filters.Denoiser(gray, ref dest);
+                    Filters.EdgeEnhancement(gray, ref dest);
                     ConvertedImage = dest.ToBitmap().ToBitmapSource();
                     break;
                 case "Resize":
@@ -414,12 +415,19 @@ namespace OpenCVSharp_GUI
         private void LoadImage(String filePath)
         {
             _originalMat = new Bitmap(filePath).ToMat();
+
+            if (_originalMat.Channels() > 1)
+            {
+                _originalMat = _originalMat.CvtColor(ColorConversionCodes.BGR2GRAY).Clone();
+            }
+
             _convertedMat = _originalMat.Clone();
             OriginalImage = _originalMat.ToBitmapSource();
             ConvertedImage = _originalMat.ToBitmapSource();
             ImageWidth = _originalMat.Width;
             ImageHeight = _originalMat.Height;
             ResizeValue = 100;
+
         }
 
         private void SaveImage(String filePath)
@@ -523,6 +531,7 @@ namespace OpenCVSharp_GUI
                     if (!String.IsNullOrEmpty(Loaded_Image))
                     {
                         LoadImage(Loaded_Image);
+                        Top_Main_Window.Title = "OpenCVSharp-GUI   Loaded: " + Loaded_Image;
                     }
                     break;
                 case System.Windows.Forms.DialogResult.Cancel:
@@ -538,12 +547,13 @@ namespace OpenCVSharp_GUI
             use += "_Elab.png";
             Saved_Image = use = System.IO.Path.GetDirectoryName(Loaded_Image) + "\\" + use;
             SaveImage(Saved_Image);
+            Top_Main_Window.Title = "OpenCVSharp-GUI   Saved: " + Saved_Image;
         }
 
-            #endregion
+        #endregion
 
-            #region Window Events
-            private async void showToolTipWindow()
+        #region Window Events
+        private async void showToolTipWindow()
         {
             await this.ShowChildWindowAsync(new ToolTipWindow() { IsModal = true, EnableDropShadow=true}, ChildWindowManager.OverlayFillBehavior.FullWindow);
         }
