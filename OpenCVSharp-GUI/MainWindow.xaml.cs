@@ -382,7 +382,8 @@ namespace OpenCVSharp_GUI
                     break;
                 case "Denoiser":
                     //Filters.Denoiser(gray, ref dest);
-                    Filters.EdgeEnhancement(gray, ref dest);
+                    //Filters.EdgeEnhancement(gray, ref dest);
+                    Filters.Full_Edge(gray, ref dest);
                     ConvertedImage = dest.ToBitmap().ToBitmapSource();
                     break;
                 case "Resize":

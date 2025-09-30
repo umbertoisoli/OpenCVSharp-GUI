@@ -48,45 +48,112 @@ namespace OpenCVSharp_GUI
             
         }
 
-        public static void EdgeEnhancement(Mat gray, ref Mat enhancedImage)
+        public static void Full_Edge(Mat gray, ref Mat enhancedImage)
         {
+            //Copia Immagine
             enhancedImage = gray.Clone();
-            Mat kernelx = new Mat(5, 5, MatType.CV_8SC1, new Scalar(0));
+            Mat robertImage = new Mat();
+            robertImage= gray.Clone();
             Mat dst = new Mat();
+            dst= gray.Clone();
 
-            sbyte[] kernelValues = { -1, -1, -1, -1, -1,
-                                     -1,  2,  2,  2, -1,
-                                     -1,  2,  7,  2, -1,
-                                     -1,  2,  2,  2, -1,
-                                     -1, -1, -1, -1, -1  };
+            sbyte[] kernelValues = { +1,  0, +1,
+                                      0,  0,  0,
+                                     -1,  0, -1 };
 
-            Mat kernel = new Mat(5, 5, MatType.CV_8SC1, kernelValues);
+            Mat kernelx = new Mat(3, 3, MatType.CV_8SC1, kernelValues);
 
 
-            kernelx.Set<sbyte>(1, 1,  4);
-            kernelx.Set<sbyte>(0, 1,  -1);
-            kernelx.Set<sbyte>(2, 1,  -1);
-            kernelx.Set<sbyte>(1, 0,  -1);
-            kernelx.Set<sbyte>(1, 2,  -1);
+            Mat kernelw = new Mat(3, 3, MatType.CV_8SC1, new Scalar(0));
+            kernelw.Set<sbyte>(0, 0, 0);
+            kernelw.Set<sbyte>(0, 1, 0);
+            kernelw.Set<sbyte>(0, 2, 0);
 
-            //Cv2.Normalize(gray, enhancedImage, 0, 255, NormTypes.MinMax);
+            //Utility
+            //Riempie tutta l'immagine con valore 0
+            //enhancedImage.SetTo(Scalar.All(0));
 
-            gray.ConvertTo(gray, MatType.CV_32FC1,1,-10); // or CV_32F works too
-            Cv2.Log(gray, enhancedImage);
-            enhancedImage.ConvertTo(enhancedImage, MatType.CV_8UC1,46,-50); // or CV_32F works too
+            //Copia Immagine
+            //enhancedImage = dst.Clone();
 
-            //Cv2.Filter2D(gray, enhancedImage, MatType.CV_8UC1, kernelx);
+            Cv2.Normalize(gray, enhancedImage, 0, 255, NormTypes.MinMax);
 
+            //gray.ConvertTo(gray, MatType.CV_32FC1,1,-10); // or CV_32F works too
+            //Cv2.Log(gray, enhancedImage);
+            //enhancedImage.ConvertTo(enhancedImage, MatType.CV_8UC1,46,-10); //-50 or CV_32F works too
+
+            //Applica un Roberts per edge obliqui e somma un sobel x edge X-Y
+            //Cv2.Filter2D(gray, robertImage, MatType.CV_8UC1, kernelx);
+            //Cv2.Sobel(gray,dst, MatType.CV_8UC1,1,1,3,1,0, BorderTypes.Default);
+            //Cv2.BitwiseOr(dst, robertImage, enhancedImage, null);
+
+            //Applica un filtro laplaciano con offset 128
+            //Cv2.Laplacian(gray, enhancedImage, MatType.CV_8UC1, 3, 1, 128);
+
+
+
+
+            //Cv2.Scharr(gray,enhancedImage, MatType.CV_8UC1,0,1,1,128);
+            //Cv2.Threshold(enhancedImage, enhancedImage, 48, 255, ThresholdTypes.Binary);
             return;
 
             //Nuovo
 
-            
+
 
 
             //Cv2.EqualizeHist(gray, enhancedImage);
-            Point centro = new Point(-1, -1);
-            Cv2.Filter2D(gray, enhancedImage,-1, kernel, centro,0,BorderTypes.Default);
+
+            //Point centro = new Point(-1, -1);
+            //Cv2.Filter2D(gray, enhancedImage,-1, kernel, centro,0,BorderTypes.Default);
+        }
+
+
+        public static void EdgeEnhancement(Mat gray, ref Mat enhancedImage)
+        {
+            //Copia Immagine
+            enhancedImage = gray.Clone();
+            Mat dst = new Mat();
+
+            sbyte[] kernelValues = { -1, -1, -1,
+                                     -1,  8, -1,
+                                     -1, -1, -1 };
+
+            Mat kernelx = new Mat(3, 3, MatType.CV_8SC1, kernelValues);
+
+
+            Mat kernelw = new Mat(3, 3, MatType.CV_8SC1, new Scalar(0));
+            kernelw.Set<sbyte>(0,0,  0);
+            kernelw.Set<sbyte>(0,1,  0);
+            kernelw.Set<sbyte>(0,2,  0);
+
+
+            //Cv2.Normalize(gray, enhancedImage, 0, 255, NormTypes.MinMax);
+
+            //gray.ConvertTo(gray, MatType.CV_32FC1,1,-10); // or CV_32F works too
+            //Cv2.Log(gray, enhancedImage);
+            //enhancedImage.ConvertTo(enhancedImage, MatType.CV_8UC1,46,-10); //-50 or CV_32F works too
+
+            //Cv2.Filter2D(gray, enhancedImage, MatType.CV_8UC1, kernelx);
+            Cv2.Laplacian(gray, enhancedImage, MatType.CV_8UC1,3,1,128);
+
+            //Copia Immagine
+            //enhancedImage = gray.Clone();
+
+
+            //Cv2.Scharr(gray,enhancedImage, MatType.CV_8UC1,0,1,1,128);
+            //Cv2.Threshold(enhancedImage, enhancedImage, 48, 255, ThresholdTypes.Binary);
+            return;
+
+            //Nuovo
+
+
+
+
+            //Cv2.EqualizeHist(gray, enhancedImage);
+
+            //Point centro = new Point(-1, -1);
+            //Cv2.Filter2D(gray, enhancedImage,-1, kernel, centro,0,BorderTypes.Default);
         }
 
         public static void CannyFilter(Mat gray, ref Mat canny, int value1, int value2)
@@ -121,6 +188,8 @@ namespace OpenCVSharp_GUI
             //scalled = new Mat(height, width, MatType.CV_8UC1);  // (new Mat. CvSize(width, height), BitDepth.U8, 1);
             //gray.Resize(scalled, Interpolation.Linear);
             Size to_resize = new Size(0, 0);
+
+
             Cv2.Resize(gray, scalled, to_resize, RValue, RValue, InterpolationFlags.Linear);
         }
 
